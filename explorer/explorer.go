@@ -20,6 +20,7 @@ type homeData struct {
 	Blocks    []*blockchaint.Block
 }
 
+// enter home first, and produce blockchaint struct
 func home(rw http.ResponseWriter, r *http.Request) {
 	data := homeData{"Home", blockchaint.GetBlockchain().AllBlocks()}
 	templates.ExecuteTemplate(rw, "home", data)
