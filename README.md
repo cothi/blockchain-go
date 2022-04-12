@@ -1,3 +1,5 @@
+[![Go](https://github.com/tetgo/powtest/actions/workflows/go.yml/badge.svg)](https://github.com/tetgo/powtest/actions/workflows/go.yml)
+
 # blockchain_pow_test
 
 clone coding pow blockchain network
