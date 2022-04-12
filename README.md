@@ -1,1 +1,1 @@
-# powtest
+# blockchain_pow_test
