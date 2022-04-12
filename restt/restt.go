@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"strconv"
 	blockchaint "tetgo/tetgocoin/blockchain"
 	"tetgo/tetgocoin/utill"
 
@@ -67,20 +66,19 @@ func documentation(rw http.ResponseWriter, r *http.Request) {
 func blocks(rw http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "GET":
-		json.NewEncoder(rw).Encode(blockchaint.GetBlockchain().AllBlocks())
+		json.NewEncoder(rw).Encode(blockchaint.Blockchain().Blocks())
 	case "POST":
 		var addBlockBody addBlockBody
 		utill.HandleErr(json.NewDecoder(r.Body).Decode(&addBlockBody))
-		blockchaint.GetBlockchain().AddBlock(addBlockBody.Message)
+		blockchaint.Blockchain().AddBlock(addBlockBody.Message)
 		rw.WriteHeader(http.StatusCreated)
 	}
 }
 
 func block(rw http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	id, err := strconv.Atoi(vars["height"])
-	utill.HandleErr(err)
-	block, err := blockchaint.GetBlockchain().GetBlock(id)
+	hash := vars["hash"]
+	block, err := blockchaint.FindBlock(hash)
 	encoder := json.NewEncoder(rw)
 	if err == blockchaint.ErrNotFound {
 		encoder.Encode(errorResponse{fmt.Sprint(err)})
@@ -93,7 +91,6 @@ func jsonContentTypeMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
 		rw.Header().Add("Content-Type", "application/json")
 		next.ServeHTTP(rw, r)
-
 	})
 }
 
@@ -103,7 +100,7 @@ func Start(aPort int) {
 	router.Use(jsonContentTypeMiddleware)
 	router.HandleFunc("/", documentation).Methods("GET")
 	router.HandleFunc("/blocks", blocks).Methods("GET", "POST")
-	router.HandleFunc("/blocks/{height:[0-9]+}", block).Methods("GET")
+	router.HandleFunc("/blocks/{hash:[a-f0-9]+}", block).Methods("GET")
 	fmt.Printf("Listening on http://localhost%s\n", port)
 	log.Fatal(http.ListenAndServe(port, router))
 }

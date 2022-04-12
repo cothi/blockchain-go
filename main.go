@@ -1,8 +1,12 @@
 package main
 
-import "tetgo/tetgocoin/restt"
+import (
+	"tetgo/tetgocoin/clii"
+	"tetgo/tetgocoin/db"
+)
 
 func main() {
-	restt.Start(4000)
 
+	defer db.Close()
+	clii.Start()
 }
