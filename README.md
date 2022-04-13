@@ -1,6 +1,4 @@
-[![Go](https://github.com/tetgo/powtest/actions/workflows/go.yml/badge.svg)](https://github.com/tetgo/powtest/actions/workflows/go.yml)
-
-[![Actions Status: My cool Action](https://github.com/tetgo/powtest/workflows/My%20cool%20Action/badge.svg)](https://github.com/tetgo/powtest/actions?query=workflow%3A"My+cool+Action")
+[![Actions Status: go-test](https://github.com/tetgo/powtest/workflows/Go/badge.svg)](https://github.com/tetgo/powtest/actions?query=workflow%3A"Go")
 
 # blockchain_pow_test
 
