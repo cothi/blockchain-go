@@ -2,14 +2,31 @@ GET http://localhost:5000/
 
 ####
 
+GET http://localhost:5000/status
+
+####
+
 GET http://localhost:5000/blocks
 
 ####
+
 POST http://localhost:5000/blocks
 
+
+####
+
+POST http://localhost:5000/balance/nico
+
+####
+POST http://localhost:5000/transactions
+
 {
-"message": "Data for my block2"
+"to": "lynn",
+"amount": 25
 }
 
 ####
+
 GET http://localhost:5000/blocks/1
+
+####
