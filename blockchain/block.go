@@ -34,8 +34,10 @@ func FindBlock(hash string) (*Block, error) {
 	if blockBytes == nil {
 		return nil, ErrNotFound
 	}
+
 	block := &Block{}
 	block.restore(blockBytes)
+
 	return block, nil
 }
 

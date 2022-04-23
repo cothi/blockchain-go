@@ -23,7 +23,9 @@ var b *blockchain
 var once sync.Once
 
 func (b *blockchain) restore(data []byte) {
+
 	utill.FromBytes(b, data)
+
 }
 
 func (b *blockchain) AddBlock() {
@@ -51,6 +53,23 @@ func Blocks(b *blockchain) []*Block {
 		}
 	}
 	return blocks
+}
+
+func Txs(b *blockchain) []*Tx {
+	var txs []*Tx
+	for _, block := range Blocks(b) {
+		txs = append(txs, block.Transactions...)
+	}
+	return txs
+}
+
+func FindTx(b *blockchain, targetID string) *Tx {
+	for _, tx := range Txs(b) {
+		if tx.ID == targetID {
+			return tx
+		}
+	}
+	return nil
 }
 
 func recalculateDifficulty(b *blockchain) int {
@@ -81,17 +100,15 @@ func getDifficulty(b *blockchain) int {
 func UTxOutsByAddress(address string, b *blockchain) []*UTxOut {
 	var uTxOuts []*UTxOut
 	creatorTxs := make(map[string]bool)
-
 	for _, block := range Blocks(b) {
 		for _, tx := range block.Transactions {
 			for _, input := range tx.TxIns {
-				if input.Owner == address {
-					creatorTxs[input.TxID] = true
+				if input.Signature == "COINBASE" {
+					break
 				}
 			}
-
 			for index, output := range tx.TxOuts {
-				if output.Owner == address {
+				if output.Address == address {
 					if _, ok := creatorTxs[tx.ID]; !ok {
 						uTxOut := &UTxOut{tx.ID, index, output.Amount}
 						if !isOnMempool(uTxOut) {
@@ -100,7 +117,6 @@ func UTxOutsByAddress(address string, b *blockchain) []*UTxOut {
 					}
 				}
 			}
-
 		}
 	}
 	return uTxOuts

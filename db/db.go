@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	dbName       = "blockchain.go"
+	dbName       = "blockchain.db"
 	dataBucket   = "data"
 	blocksBucket = "blocks"
 	checkpoint   = "checkpoint"

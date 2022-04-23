@@ -7,6 +7,7 @@ import (
 	"net/http"
 	blockchaint "tetgo/tetgocoin/blockchain"
 	"tetgo/tetgocoin/utill"
+	"tetgo/tetgocoin/wallet"
 
 	"github.com/gorilla/mux"
 )
@@ -30,6 +31,10 @@ type urlDescription struct {
 type balanceResponse struct {
 	Address string `json:"address"`
 	Balance int    `json:"balance"`
+}
+
+type myWalletResponse struct {
+	Address string
 }
 
 type errorResponse struct {
@@ -118,6 +123,7 @@ func balance(rw http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	address := vars["address"]
 	total := r.URL.Query().Get("total")
+
 	switch total {
 	case "true":
 		amount := blockchaint.BalanceByAddress(address, blockchaint.Blockchain())
@@ -137,9 +143,16 @@ func transactions(rw http.ResponseWriter, r *http.Request) {
 	utill.HandleErr(json.NewDecoder(r.Body).Decode(&payload))
 	err := blockchaint.Mempool.AddTx(payload.To, payload.Amount)
 	if err != nil {
-		json.NewEncoder(rw).Encode(errorResponse{"not enough funds"})
+		rw.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(rw).Encode(errorResponse{err.Error()})
+		return
 	}
 	rw.WriteHeader(http.StatusCreated)
+}
+
+func myWallet(rw http.ResponseWriter, r *http.Request) {
+	address := wallet.Wallet().Address
+	json.NewEncoder(rw).Encode(myWalletResponse{Address: address})
 }
 
 func Start(aPort int) {
@@ -153,9 +166,10 @@ func Start(aPort int) {
 
 	router.HandleFunc("/blocks", blocks).Methods("GET", "POST")
 	router.HandleFunc("/blocks/{hash:[a-f0-9]+}", block).Methods("GET")
-	router.HandleFunc("/balance/{address}", balance)
+	router.HandleFunc("/balance/{address}", balance).Methods("GET")
 
-	router.HandleFunc("/mempool", mempool)
+	router.HandleFunc("/mempool", mempool).Methods("GET")
+	router.HandleFunc("/wallet", myWallet).Methods("GET")
 	router.HandleFunc("/transactions", transactions).Methods("POST")
 
 	fmt.Printf("Listening on http://localhost%s\n", port)
