@@ -47,9 +47,12 @@ type addTxPayload struct {
 	Amount int
 }
 
+type addPeerPayload struct {
+	Address, Port string
+}
+
 func documentation(rw http.ResponseWriter, r *http.Request) {
 	// data := []urlDescription
-
 	data := []urlDescription{
 		{
 			URL:         url("/"),
@@ -65,6 +68,7 @@ func documentation(rw http.ResponseWriter, r *http.Request) {
 			URL:         url("/blocks"),
 			Method:      "GET",
 			Description: "See All Blocks",
+			Payload:     "data:string",
 		},
 		{
 			URL:         url("/blocks"),
@@ -96,7 +100,8 @@ func blocks(rw http.ResponseWriter, r *http.Request) {
 	case "GET":
 		utill.HandleErr(json.NewEncoder(rw).Encode(blockchaint.Blocks(blockchaint.Blockchain())))
 	case "POST":
-		blockchaint.Blockchain().AddBlock()
+		newBlock := blockchaint.Blockchain().AddBlock()
+		p2p.BroadcastNewBlock(newBlock)
 		rw.WriteHeader(http.StatusCreated)
 	}
 }
@@ -115,7 +120,7 @@ func block(rw http.ResponseWriter, r *http.Request) {
 }
 
 func status(rw http.ResponseWriter, r *http.Request) {
-	utill.HandleErr(json.NewEncoder(rw).Encode(blockchaint.Blockchain()))
+	blockchaint.Status(blockchaint.Blockchain(), rw)
 }
 
 func jsonContentTypeMiddleware(next http.Handler) http.Handler {
@@ -148,18 +153,19 @@ func balance(rw http.ResponseWriter, r *http.Request) {
 }
 
 func mempool(rw http.ResponseWriter, r *http.Request) {
-	utill.HandleErr(json.NewEncoder(rw).Encode(blockchaint.Mempool.Txs))
+	utill.HandleErr(json.NewEncoder(rw).Encode(blockchaint.Mempool().Txs))
 }
 
 func transactions(rw http.ResponseWriter, r *http.Request) {
 	var payload addTxPayload
 	utill.HandleErr(json.NewDecoder(r.Body).Decode(&payload))
-	err := blockchaint.Mempool.AddTx(payload.To, payload.Amount)
+	tx, err := blockchaint.Mempool().AddTx(payload.To, payload.Amount)
 	if err != nil {
 		rw.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(rw).Encode(errorResponse{err.Error()})
 		return
 	}
+	p2p.BroadcastNewTx(tx)
 	rw.WriteHeader(http.StatusCreated)
 }
 
@@ -168,10 +174,23 @@ func myWallet(rw http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(rw).Encode(myWalletResponse{Address: address})
 }
 
+func peers(rw http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case "POST":
+		var payload addPeerPayload
+		json.NewDecoder(r.Body).Decode(&payload)
+		p2p.AddPeer(payload.Address, payload.Port, port[1:], true)
+		rw.WriteHeader(http.StatusOK)
+	case "GET":
+		json.NewEncoder(rw).Encode(p2p.AllPeers(&p2p.Peers))
+	}
+}
+
 func Start(aPort int) {
 	port = fmt.Sprintf(":%d", aPort)
 
 	router := mux.NewRouter()
+
 	router.Use(jsonContentTypeMiddleware, loggerMiddleware)
 
 	router.HandleFunc("/", documentation).Methods("GET")
@@ -186,6 +205,7 @@ func Start(aPort int) {
 	router.HandleFunc("/transactions", transactions).Methods("POST")
 
 	router.HandleFunc("/ws", p2p.Upgrade).Methods("GET")
+	router.HandleFunc("/peers", peers).Methods("GET", "POST")
 
 	fmt.Printf("Listening on http://localhost%s\n", port)
 	log.Fatal(http.ListenAndServe(port, router))

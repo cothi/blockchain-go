@@ -2,7 +2,6 @@ package blockchaint
 
 import (
 	"errors"
-	"fmt"
 	"strings"
 	"tetgo/tetgocoin/db"
 	"tetgo/tetgocoin/utill"
@@ -19,7 +18,7 @@ type Block struct {
 	Transactions []*Tx  `json:"transactions"`
 }
 
-func (b *Block) persist() {
+func persistBlock(b *Block) {
 	db.SaveBlock(b.Hash, utill.ToBytes(b))
 }
 
@@ -46,7 +45,7 @@ func (b *Block) mine() {
 	for {
 		b.Timestamp = int(time.Now().Unix())
 		hash := utill.Hash(b)
-		fmt.Printf("\n\n\nTarget:%s\nHash:%s\nNonce:%d\n\n\n", target, hash, b.Nonce)
+		//fmt.Printf("\n\n\nTarget:%s\nHash:%s\nNonce:%d\n\n\n", target, hash, b.Nonce)
 		if strings.HasPrefix(hash, target) {
 			b.Hash = hash
 			break
@@ -65,7 +64,7 @@ func createBlock(prevHash string, height, diff int) *Block {
 		Nonce:      0,
 	}
 	block.mine()
-	block.Transactions = Mempool.TxToConfirm()
-	block.persist()
+	block.Transactions = Mempool().TxToConfirm()
+	persistBlock(block)
 	return block
 }

@@ -2,6 +2,7 @@ package blockchaint
 
 import (
 	"errors"
+	"sync"
 	"tetgo/tetgocoin/utill"
 	"tetgo/tetgocoin/wallet"
 	"time"
@@ -12,10 +13,21 @@ const (
 )
 
 type mempool struct {
-	Txs []*Tx
+	Txs map[string]*Tx
+	m   sync.Mutex
 }
 
-var Mempool *mempool = &mempool{}
+var m *mempool
+var memOnce sync.Once
+
+func Mempool() *mempool {
+	memOnce.Do(func() {
+		m = &mempool{
+			Txs: make(map[string]*Tx),
+		}
+	})
+	return m
+}
 
 type Tx struct {
 	ID        string   `json:"id"`
@@ -61,15 +73,16 @@ func validate(tx *Tx) bool {
 		}
 		address := prevTx.TxOuts[txIn.Index].Address
 		valid = wallet.Verify(txIn.Signature, tx.ID, address)
+		if !valid {
+			break
+		}
 	}
 	return valid
 }
 
-func isOnMempool(uTxOut *UTxOut) bool {
-	exists := false
-
+func isOnMempool(uTxOut *UTxOut) (exists bool) {
 Outer:
-	for _, tx := range Mempool.Txs {
+	for _, tx := range Mempool().Txs {
 		for _, input := range tx.TxIns {
 			if input.TxID == uTxOut.TxID && input.Index == uTxOut.Index {
 				exists = true
@@ -77,7 +90,7 @@ Outer:
 			}
 		}
 	}
-	return exists
+	return
 }
 
 func makeCoinbaseTx(address string) *Tx {
@@ -148,19 +161,28 @@ func makeTx(from, to string, amount int) (*Tx, error) {
 	return tx, nil
 }
 
-func (m *mempool) AddTx(to string, amount int) error {
+func (m *mempool) AddTx(to string, amount int) (*Tx, error) {
 	tx, err := makeTx(wallet.Wallet().Address, to, amount)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	m.Txs = append(m.Txs, tx)
-	return nil
+	m.Txs[tx.ID] = tx
+	return tx, nil
 }
 
 func (m *mempool) TxToConfirm() []*Tx {
 	coinbase := makeCoinbaseTx(wallet.Wallet().Address)
-	txs := m.Txs
+	var txs []*Tx
+	for _, tx := range m.Txs {
+		txs = append(txs, tx)
+	}
 	txs = append(txs, coinbase)
-	m.Txs = nil
+	m.Txs = make(map[string]*Tx)
 	return txs
+}
+
+func (m *mempool) AddPeerTx(tx *Tx) {
+	m.m.Lock()
+	defer m.m.Unlock()
+	m.Txs[tx.ID] = tx
 }
