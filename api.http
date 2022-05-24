@@ -1,61 +1,87 @@
-GET http://localhost:4001/
+GET http://localhost:5000/
 
 ####
 
-GET http://localhost:4000/status
+GET http://localhost:5000/status
 
 ####
 
-GET http://localhost:4000/blocks
+GET http://localhost:5000/blocks
 
 ####
 
-GET http://localhost:4001/blocks
+GET http://localhost:5000
 
 ####
 
-POST http://localhost:4000/blocks
+POST http://localhost:5000/blocks
 
 
 ####
 
-GET http://localhost:4001/mempool
+GET http://localhost:5000/mempool
 
 ####
 
 GET http://localhost:4000/balance/2237423ce662a3cd9a3153677b3d0247f3163d7dae983c84d747b44ae195857e2abbd97c9d2a02073bef315380572e2e8eb437c506752278026609745e64816a
 
-
-####
-GET http://localhost:4000/wallet
-
-
 ####
 
-GET http://localhost:4000/ws
+GET http://localhost:2000/balance/f6217090270b1feed309a3902c0ae6fede54e2240d24249c48f8b15acc7ee573f2f3ca5849b5d96ce0f275eedb3e21a77a372b17f6107b15c346eeff4c4a185d
+####
+
+GET http://localhost:2000/wallet
 
 
 ####
-POST http://localhost:4000/transactions
+
+GET http://localhost:2000
+
+
+####
+
+POST http://localhost:2000
+
+####
+
+GET http://localhost:2000/peers
+
+####
+POST http://localhost:2000/peers
+Content-Type: application/json
+{ "address": "127.0.0.1", "port": "2000"}
+####
+
+POST https://reqres.in/api/users/2
+Content-Type: application/json
 
 {
-"to": "lynn",
-"amount": 40
+    "name": "morpheus",
+    "job": "zion resident"
 }
 
 ####
+POST https://reqres.in/api/users
+{
+"name":"morpheus"
+"job": "sexer"
+}
+###
+POST http://httpbin.org/post
+Content-Type: application/json
 
-GET http://localhost:4000/peers
-
-####
-
-POST http://localhost:4001/peers
+{ "name": "Test"}
+###
+POST http://localhost:2000/peers
 
 {
-  "address": "127.0.0.1",
-  "port": "4000"
+    "address": "127.0.0.1",
+    "port": "5000"
 }
 
-####
-
-GET http://localhost:4001/peers
+###
+POST http://localhost:5000/transactions
+{
+    "to":"lynn",
+    "amount":10
+}
